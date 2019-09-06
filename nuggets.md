@@ -170,10 +170,32 @@
 > Benefits of regularization in reducing the variance of the model.
 
 ## Topic	-	Quantity Always Trumps Quality
--	Subject: Coding
+-	Subject: **Coding**
 -	Tags:
 -	Link: https://blog.codinghorror.com/quantity-always-trumps-quality/
 -	Pointers:
 >	Stop Theorizing    
 >	Write Lots of software    
 >	Learn from your mistakes
+
+## Topic	-	How Much Do Data Scientists Make?
+-	Subject: **Data Science**
+-	Tags: **Data Science**, **Market Research**, **Study**
+-	Link: https://towardsdatascience.com/how-much-do-data-scientists-make-cbd7ec2b458
+-	Pointers:
+>
+	1. More Data Scientist are getting hired and the trend possibly continue to shift upwards.   
+	2. Title of research analyst has been renamed to Data Scientist as companies want to be specific about their work in Big Data and AI field.
+	3. Data Scientist tile is apt in itself - "if you are applying quantitative data in an insightful way to help your organization make better decisions, then you are a data science practitioner in my book!"
+	4. Another great point revealed in the study is the variance in the salaries of data scientists which might be because a lot of companies are hiring people under data scientist title whose job is to work on SQL, pulling data, instead of working on data directly to pull insights or to find pattern.
+	5. Also, the salary distribution among data scientist has not shifted much as shown below:
+		-	2015:
+			- 25th percentile : $100,000
+			- 50th percentile	: $115,000
+			- 75th percentile : $130,000
+		- 2019
+			- 25th percentile : $100,000
+			- 50th percentile	: $119,850
+			- 75th percentile : $135,000
+	6. Companies like Airbnb. Lyft, Facebook, etc. are on top in paying great salaries and also, big-tech like Facebook, MS, Uber etc. are hiring more data scientists as well.       
+- Disclaimer: The above mentioned pointers are specific to the study mentioned in the link and mainly revolves around H1B filing related to data scientists.
