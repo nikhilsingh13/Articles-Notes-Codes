@@ -39,7 +39,7 @@ autoplot(melsyd[, "Economy.Class"])+
   ylab("Thousands")
 ```
 
-![](chapter_2_files/figure-markdown_github/Time%20plots-1.png)
+![](chapter_files/figure-markdown_github/Time%20plots-1.png)
 
 ``` r
 autoplot(a10) +
@@ -48,7 +48,7 @@ autoplot(a10) +
   xlab("Year")
 ```
 
-![](chapter_2_files/figure-markdown_github/Time%20plots-2.png)
+![](chapter_files/figure-markdown_github/Time%20plots-2.png)
 
 Time series patterns
 --------------------
@@ -76,7 +76,7 @@ ggseasonplot(a10, year.labels = TRUE, year.labels.left = TRUE) +
   ggtitle("Seasonal plot: antidiabetic drug sales")
 ```
 
-![](chapter_2_files/figure-markdown_github/Seasonal%20plots-1.png)
+![](chapter_files/figure-markdown_github/Seasonal%20plots-1.png)
 
 ``` r
 ggseasonplot(a10, polar = TRUE) +
@@ -84,7 +84,7 @@ ggseasonplot(a10, polar = TRUE) +
   ggtitle("Polar Seasonal plot: antidiabetic drug sales")
 ```
 
-![](chapter_2_files/figure-markdown_github/Seasonal%20plots-2.png)
+![](chapter_files/figure-markdown_github/Seasonal%20plots-2.png)
 
 Seasonal subseries plots
 ------------------------
@@ -95,7 +95,7 @@ ggsubseriesplot(a10) +
   ggtitle("Seasonal subseries plot: antidiabetic drug sales")
 ```
 
-![](chapter_2_files/figure-markdown_github/Seasonal%20subseries%20plots-1.png)
+![](chapter_files/figure-markdown_github/Seasonal%20subseries%20plots-1.png)
 
 Scatterplots
 ------------
@@ -108,7 +108,7 @@ autoplot(elecdemand[,c("Demand", "Temperature")], facets = TRUE) +
 
     ## Warning: Ignoring unknown parameters: series
 
-![](chapter_2_files/figure-markdown_github/Scatterplots-1.png)
+![](chapter_files/figure-markdown_github/Scatterplots-1.png)
 
 *To study the relationship between demand and temperature; plotting one series against the other.*
 
@@ -118,7 +118,7 @@ qplot(Temperature, Demand, data = as.data.frame(elecdemand)) +
   xlab("Temperature (Celsius)")
 ```
 
-![](chapter_2_files/figure-markdown_github/unnamed-chunk-1-1.png)
+![](chapter_files/figure-markdown_github/unnamed-chunk-1-1.png)
 
 ### Correlation
 
@@ -137,7 +137,7 @@ autoplot(visnights[,1:5], facets = TRUE) +
   ylab("Number of visitor nights each quarter (millions)")
 ```
 
-<img src="chapter_2_files/figure-markdown_github/scatterplot_matrices-1.png" style="display: block; margin: auto;" />
+<img src="chapter_files/figure-markdown_github/scatterplot_matrices-1.png" style="display: block; margin: auto;" />
 
 **Relationships between these five time series, plotting each time series against the others.**
 
@@ -149,7 +149,7 @@ GGally::ggpairs(as.data.frame(visnights[,1:5]))
     ##   method from   
     ##   +.gg   ggplot2
 
-<img src="chapter_2_files/figure-markdown_github/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+<img src="chapter_files/figure-markdown_github/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
 > The value of the scatterplot matrix is that it enables a quick view of the relationships between all pairs of variables.
 
@@ -161,7 +161,7 @@ beer2 <- window(ausbeer, start=1992)
 gglagplot(beer2)
 ```
 
-<img src="chapter_2_files/figure-markdown_github/lag plots 1-1.png" style="display: block; margin: auto;" /> &gt; Here the colours indicate the quarter of the variable on the vertical axis. The lines connect points in chronological order. The relationship is strongly positive at lags 4 and 8, reflecting the strong seasonality in the data. The negative relationship seen for lags 2 and 6 occurs because peaks (in Q4) are plotted against troughs (in Q2)
+<img src="chapter_files/figure-markdown_github/lag plots 1-1.png" style="display: block; margin: auto;" /> &gt; Here the colours indicate the quarter of the variable on the vertical axis. The lines connect points in chronological order. The relationship is strongly positive at lags 4 and 8, reflecting the strong seasonality in the data. The negative relationship seen for lags 2 and 6 occurs because peaks (in Q4) are plotted against troughs (in Q2)
 
 > The window() function used here is very useful when extracting a portion of a time series.
 
@@ -190,7 +190,7 @@ head(beer2,2)
 ggAcf(beer2)
 ```
 
-<img src="chapter_2_files/figure-markdown_github/correlogram-1.png" style="display: block; margin: auto;" />
+<img src="chapter_files/figure-markdown_github/correlogram-1.png" style="display: block; margin: auto;" />
 
 > In this graph: - *r*4 is higher than for the other lags. This is due to the seasonal pattern in the data: the peaks tend to be four quarters apart and the troughs tend to be four quarters apart. - *r*2 is more negative than for the other lags because troughs tend to be two quarters behind peaks. - The dashed blue lines indicate whether the correlations are significantly different from zero.
 
@@ -205,13 +205,13 @@ autoplot(aelec) +
   ylab("GWh")
 ```
 
-<img src="chapter_2_files/figure-markdown_github/Australian electricity demand plot & ACF-1.png" style="display: block; margin: auto;" />
+<img src="chapter_files/figure-markdown_github/Australian electricity demand plot & ACF-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggAcf(aelec, lag = 48)
 ```
 
-<img src="chapter_2_files/figure-markdown_github/Australian electricity demand plot & ACF-2.png" style="display: block; margin: auto;" />
+<img src="chapter_files/figure-markdown_github/Australian electricity demand plot & ACF-2.png" style="display: block; margin: auto;" />
 
 > The slow decrease in the ACF as the lags increase is due to the trend, while the "scalloped" shape is due the seasonality.
 
@@ -227,13 +227,13 @@ y <- ts(rnorm(50))
 autoplot(y) + ggtitle("White noise")
 ```
 
-![](chapter_2_files/figure-markdown_github/white%20noise-1.png)
+![](chapter_files/figure-markdown_github/white%20noise-1.png)
 
 ``` r
 ggAcf(y)
 ```
 
-![](chapter_2_files/figure-markdown_github/white%20noise-2.png)
+![](chapter_files/figure-markdown_github/white%20noise-2.png)
 
 > For white noise series, we expect each autocorrelation to be close to zero. Of course, they will not be exactly equal to zero as there is some random variation. For a white noise series, we expect 95% of the spikes in the ACF to lie within $\\pm\\frac{2}{\\sqrt(T)}$ where **T** is the length of the time series. It is common to plot these bounds on a graph of the ACF (the blue dashed lines above). If one or more large spikes are outside these bounds, or if substantially more than 5% of spikes are outside these bounds, then the series is probably not white noise.
 
