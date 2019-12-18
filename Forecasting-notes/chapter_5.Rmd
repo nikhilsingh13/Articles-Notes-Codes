@@ -1,0 +1,568 @@
+---
+title: "Chapter-5 of Forecasting: Principles & Practices"
+subtitle: "Time series regression models"
+author: "Nikhil Singh"
+date: "December 04, 2019"
+output: 
+  html_document:
+  toc:  true
+  theme: united
+  toc_depth: 2
+  toc_float: true
+---
+
+```{r}
+library(fpp2)
+```
+
+
+y - __forecast__ variable
+x - __predictor__ variable
+
+# The Linear model
+## Simple Linear Regression
+In the simplest case, the regression model allows for a linear relationship between the forecast variable _y_ and a single predictor variable _x_:
+$$y_{t} = \beta_{0} + \beta_{1} x_{1} + \epsilon_{t}$$
+
+The coefficients $\beta_{0}$ and $\beta_1$ denote the intercept and the slope of the line respectively. The intercept $\beta_0$ represents the predicted value of _y_ when $x = 0$. The slope $\beta_1$ represents the average predicted change in _y_ resulting from a one unit increase in _x_.
+
+### Example: US consumption expenditure
+```{r linear regression, fig.align='center'}
+autoplot(uschange[,c("Consumption", "Income")]) +
+  ylab("percentage change") + xlab("Year") +
+  ggtitle("Time series of quarterly %age changes (growth rates)")
+```
+
+Further,
+```{r example, fig.align='center'}
+uschange %>% 
+  as.data.frame %>% 
+  ggplot(aes(x=Income, y=Consumption)) +
+  geom_point()+ 
+  geom_smooth(method="lm", se = FALSE)
+```
+
+
+```{r}
+tslm(Consumption~Income, data = uschange)
+```
+
+
+
+## Multiple Linear Regression
+
+$$y_{t} = \beta_{0} + \beta_{1} x_{1,t} + \beta_{2} x_{2,t} + .... + \beta_{k} x_{k,t} + \epsilon_{t}$$
+
+>  The coefficients $\beta_{1},.,\beta_{k}$ measure the effect of each predictor after taking into account the effects of all the other predictors in the model. _Thus, the coefficients measure the marginal effects of the predictor variables._
+
+### Example: US consumtion expenditure
+```{r, fig.align='center'}
+autoplot(uschange, facet=TRUE)+
+  ggtitle("Quarterly percentage changes in industrial production and personal savings and quarterly changes in the unemployment rate for the US over the period 1970Q1-2016Q3.")
+
+
+
+uschange %>% 
+  as.data.frame %>% 
+  GGally::ggpairs()
+```
+
+Some soft-assumptions we've made before using Linear Regression model:
+  1) Relationship b/w the forecast variable and the predictor variable satisfies this linear equation
+  2) Errors ($\epsilon_{1},...,\epsilon_{T}$) have mean zero, otherwise the forecast will be systematically biased.
+  3) Errors are not autocorrelated, or the forecasts will be inefficient, as there is more info in the data that can be exploited.
+  4) Errors are unrelated to the predictor variable, or we can explore more information which can be included in the systematic part of the model.
+  5) Each predictor $x$ is not a random variable (usually it is not true in business case)
+  
+> It is also useful to have the errors being normally distributed with a constant variance $$\sigma_{2}$$ in order to easily produce prediction intervals.
+
+
+# Least squares estimation
+
+The least squares principle provides a way of choosing the coefficients effectively by minimising the sum of the squared errors. That is, we choose the values of $\beta_{0}, \beta_{1},.,\beta_{k}$ that minimise:
+$$\sum_{t=1}^T \epsilon_{t}^2 = \sum_{t=1}^T (y_{t} - \beta_{0} - \beta_{1}x_{1,t} - \beta_{2}x_{2,t}-...-\beta_{k}x_{k,t})^2$$
+
+
+The above expression is called __least squares__ as it provides least value for __SSE (Sum of Squared Errors)__
+
+> The `tslm()` function fits a linear regression model to time series data. Similar to `lm()`, also provides more functionality for time-series handling.
+
+### Example: US consumtion expenditure
+
+Here, the linear regression model equation should look like:
+
+$$y_{t} = \beta_{0} + \beta_{1}x_{1,t}+\beta_{2}x_{2,t}+\beta_{3}x_{3,t}+\beta_{4}x_{4,t}+\epsilon_{t}$$
+
+```{r}
+fit.consMR <- tslm(Consumption~Income + Production + Unemployment + Savings
+                     , data=uschange)
+
+summary(fit.consMR)
+```
+
+__Important Note:__
+> The `t-value` is the ratio of an esimated $\beta$ coefficient to its standard error. The `p-value` shows the probability of the estimated $\beta$ coefficient being as large as it is if there was no real relationship between consumption and the corresponding predictor. _Useful for the studying the effect of each predictor, not useful for forecasting._
+
+## Fitted values
+Predictions of _y_ can be obtained by using the estimated coefficients in the regression equation and setting the error term to zero.
+
+$$\widehat{y}_{t} = \widehat{\beta}_{0} + \widehat{\beta}_{1} x_{1,t} + \widehat{\beta}_{2} x_{2,t} +...+ \widehat{\beta}_{k} x_{k,t}$$
+
+```{r fitted values, fig.align='center'}
+autoplot(uschange[,'Consumption'], series = "Data") +
+  autolayer(fitted(fit.consMR), series = "Fitted") +
+  xlab("Year") + ylab("") +
+  ggtitle("% change in US consumption expenditure (Actual vs Fitted)") +
+  guides(colour = guide_legend(title = " "))
+```
+
+```{r, fig.align='center'}
+cbind(Data = uschange[,'Consumption']
+      , Fitted = fitted(fit.consMR)) %>% 
+  as.data.frame %>% 
+  ggplot(aes(x = Data, y = Fitted)) +
+  geom_point() +
+  ylab("Fitted (predicted values)") +
+  xlab("Data (actual values)") +
+  ggtitle("% change in US consumption expenditure") +
+  geom_abline(intercept = 0, slope = 1)
+```
+
+## Goodness of fit
+How well a regression model fits the data can be known using : coefficient of determination = $R^2$
+  - It is correlation squared - correlation b/w observed _y_ values and the predicted $\widehat{y}$
+
+$$R^2 = \frac{\sum(\widehat{y}_{t} - \bar{y})^2}{\sum(y_{t} - \bar{y})^2}$$
+
+> The above mentioned formula reflects the proportion of variation in the forecast variable that is explained by the regression model.
+
+If the predictions are close to the actual values, $R^2$ is expected to be close to 1. Similarly, vice-versa. In all cases, $R^2$ lies b/w 0 & 1.
+
+Validating a model's forecasting performance on the test data is much better than measuring the $R^2$ value on the training data.
+
+## Standard error of the regression
+Another way to know how well the model has fitted the data is using `residual standard error`.
+
+$$\widehat{\sigma}_{e} = \sqrt(\frac{1}{T-k-1} (\sum_{t=1}^T e_{t}^2))$$
+
+  - k: number if predictors in the model
+  - $T-(k+1)$: $k+1$ parameters in computing the residuals.
+  
+The standard error is related to the size of the average error that model produces. We can compare this error to the sample mean of _y_ or with the standard deviation of _y_ to gain some perspective on the accuracy of the model.
+
+
+# Evaluating the regression model
+Residuals are defined as
+$$e_{t} = y_{t} - \widehat{y}_{t}$$
+      $$= y_{t} - \widehat{\beta}_{0} - \widehat{\beta}_{1}x_{1,t}- \widehat{\beta}_{2}x_{2,t}-...- \widehat{\beta}_{k}x_{k,t}$$
+
+- Each residual is the unpredictable component of the associated observation.
+- Some useful properties:
+  - $\sum_{t=1}^{T}e_{t} = 0$ and $\sum_{t=1}^{T}x_{k,t}e_{t} = 0$ for all _k_.
+  
+  - Here we can observer 2 things:
+    - Average of the residuals is zero.
+    - Correlation b/w the residuals and the observations for the predictor variable is zero.
+
+_(The above mentioned properties are not strict and not necessarily true when the intercept is omitted from the model.)_
+  
+  
+## ACF plot of residuals
+  1.  The forecasts from a model with autocorrelated errors are still unbiased, but not completely _wrong_, but they will usually have larger prediction intervals than they need to. There comes the __ACF__ plot of the residuals.
+
+  2.  Breusch - Godfrey test (Lagrange Multiplier) test for serial correlation: used to test the joint hypothesis that there is no autocorrelation in the residuals up to certain specified order. A small p-value indicates there is significant autocorrelation remaining in the residuals. _This test is similar to Ljung-Box test, but specifically designed for use with regression models._
+  
+## Histogram of residuals
+- Good to check whether the residuals are normally distributed (not essentially for forecasting, but better for the calculation of prediction intervals much easier.)
+
+Example
+```{r}
+# It has a time plot, ACF & histogram.
+# It also has Breusch_godfrey test for jointly testing up to 8th order autocorrelation.
+checkresiduals(fit.consMR)
+
+# The time plot shows some changing variation over time, but is otherwise relatively unremarkable. This heteroscedasticity will potentially make the prediction interval coverage inaccurate.
+```
+
+## Residual plots against predictors
+- Examine scatterplots of the residuals against each of the predictor variables. If there is any pattern in the scatterplots, the relationship might be non-linear and the model will need to be modified accordingly.
+
+```{r residual plots, fig.align = 'center'}
+df <- as.data.frame(uschange)
+df[,"Residuals"] = as.numeric(residuals(fit.consMR))
+
+p1 <- ggplot(df, aes(x=Income, y=Residuals)) +
+  geom_point()
+
+p2 <- ggplot(df, aes(x=Production, y = Residuals)) +
+  geom_point()
+
+p3 <- ggplot(df, aes(x=Savings, y = Residuals)) +
+  geom_point()
+
+p4 <- ggplot(df, aes(x=Unemployment, y = Residuals)) +
+  geom_point()
+
+gridExtra::grid.arrange(p1,p2,p3,p4, nrow=2)
+```
+
+## Residual plots against fitted values
+- To look for _heteroscedasticity_ in the error, a plot needs to be analysed b/w fitted values and residuals. In case of any pattern, we are assured that variance of the residuals is not constant.
+-  A transformation of the forecast variable is required to solve this problem.
+
+Example
+```{r Residual plots against fitted values, fig.align='center'}
+cbind(Fitted = fitted(fit.consMR)
+      , Residuals = residuals(fit.consMR)) %>% 
+  as.data.frame %>% 
+  ggplot(aes(x=Fitted, y=Residuals)) +
+  geom_point() +
+  ggtitle("Scatterplots of residuals versus fitted values")
+```
+
+## Outliers and influential observations
+  - Outliers: Extreme values
+  - Influentials observations:  Large influence on the estimated coefficients of a regression model
+  
+__Note:__ _Influential observations are considered outliers if extreme in $x$ direction._
+
+## Spurious regression
+  - Regressing non-stationary time series can lead to spurious regressions.
+  - High $R^2$ and high residual autocorrelation can be signs of spurious regression
+
+Example: Output of regressing Australian air passengers on rice production in Guinea which is obviously not correlated.
+```{r Spurious regression}
+aussies <- window(ausair, end=2011)
+fit <- tslm(aussies ~ guinearice)
+
+summary(fit)
+
+checkresiduals(fit)
+```
+
+Cases of spurious regression might appear to give reasonable short-term forecasts, but they will generally not continue to work into the future.
+
+# Some useful predictors
+## Trend
+- Time series data is usually trending and a linear trend can be modelled as $x_{1,t}$ as predictor
+$$y_{t} = \beta_{0} + \beta_{1}t + \epsilon_{t}$$
+here, $t = 1,...,T$.
+- Trend variable can be specified in `tslm()` function
+
+## Dummy Variables
+- Useful for categorical variable
+- Also known as indicator variable
+- Can also account for _outlier_ in the data.
+- In case of more than 2 categories, $c-1$ categorical variables need to be created.
+
+> `tslm()` function can handle factor variables.
+
+```
+The reason for creating $c-1$ dummy variables for `c` categories is that the $c^{th}$ is captured by the intercept, and is specified when the dummy variables are all set to zero.
+```
+
+- `Dummy variable trap` if you include $c^{th}$ category also
+
+## Seasonal Dummy Variables
+- For __quarterly__ data : three dummy variables
+- For __monthly__ data : eleven dummy variables
+- For __daily__ data : six dummy variables
+
+The interpretation of each of the _coefficients_ associated with the dummy variables is - __measure of the effect of that category relative to the omitted category.__
+
+### Example: Australian quarterly beer production
+```{r Example: Australian quarterly beer production, fig.align='center'}
+beer2 <- window(ausbeer, start = 1992)
+autoplot(beer2) + xlab("Year") + ylab("MegaL")
+```
+
+Modeling the above data using a regression model with a linear trend and quarterly dummy variables,
+$$y_{t} = \beta_{0} + \beta_{1}t + \beta_{2}t_{2,t} + \beta_{3}t_{3,t} + \beta_{4}t_{2,t}+ \epsilon_{t}$$
+here $d_{1,t} = 1$ if _t_ is in quarter _i_ or _0_.
+
+- The first quarter variable has been omitted, so the coefficients associated with the other quarters are measures of the difference between those quarters and the first quarter.
+
+```{r}
+fit.beer <- tslm(beer2 ~ trend + season)
+summary(fit.beer)
+```
+
+- `trend` & `season` added by the `tslm` function because of the way, they were written.
+
+```{r, fig.align='center'}
+autoplot(beer2, series = 'Data') +
+  autolayer(fitted(fit.beer), series = 'Fitted') +
+  xlab('Year') + ylab('MegaL') +
+  ggtitle('Quarterly Beer Production')
+```
+
+```{r}
+cbind(Data = beer2, Fitted = fitted(fit.beer)) %>% 
+  as.data.frame %>% 
+  ggplot(aes(x = Data, y = Fitted, colour = as.factor(cycle(beer2)))) +
+  geom_point() +
+  ylab('Fitted') +
+  xlab('Actual Values') +
+  ggtitle('Quarterly Beer Production') +
+  scale_colour_brewer(palette = 'Dark2', name = "Quarter") +
+  geom_abline(intercept = 0, slope = 1)
+```
+
+## Intervention Variables
+Competitor activity, Advertising expenditure, Industrial Action, etc.
+
+__Spike Variable :__ Effects only last for one period and used like a dummy variable handling an outlier. One for the period of intervention and zero elsewhere.
+
+__Step Variable :__ If intervention cause a shift in the level and that too with immediate and permanent effect. The series value changes suddenly and permanently after the time of intervention. It takes value zero before intervention and one after intervention time onward.
+
+> One more type is change in slope, handled using a linear trend, a trend bends at the time of intervention and hence is nonlinear.
+
+## Trading Days
+- `bizdays()` will compute the number of trading days in each priod.
+- Another way is to count number of different days in a month for a monthly data.
+
+## Distributed Lags
+Effect of advertising can last beyond the actual campaign, thus, lagged values of advertising expenditure like
+$x_{1} = advertising for previous month;$
+$x_{2} = advertising for two months previously;$
+$.$
+$.$
+$.$
+$x_{m} = advertising for m months previously;$
+
+## Easter
+`easter` function
+
+## Fourier Series
+ - A series of sine and cosine terms of the right frequencies can approximate any periodic function.
+
+ - Alternative to dummy variables, esp for long seasonal periods like weekly data.
+ 
+ - Not advised for short seasonal periods like quarterly data
+
+### Example: Fourier series usage
+```{r}
+fourier.beer <- tslm(beer2 ~ trend + fourier(beer2, K = 2))
+summary(fourier.beer)
+```
+
+- A regression model containing Fourier terms is often called a harmonic regression because the successive Fourier terms represent harmonics of the first two Fourier terms.
+
+# Selecting Predictors
+```{r Selecting Predictors}
+CV(fit.consMR)
+```
+
+
+## Adjusted $R^2$
+  - $R^2$ does not allow for "degrees of freedom". Adding any variable tends to increase the value of $R^2$, even if that variable is irrelevant. For these reasons, forecasters should not use $R^2$ to determine whether a model will give good predictions, as it will lead to overfitting.
+
+  - Adjusted $R^2$ overcome these problems (also known as __R-bar-squared__)
+  
+$$\bar{R}^2 = 1-(1-R^2)\frac{T-1}{T-k-1}$$
+
+T - number of observations
+k - number of predictors used
+
+Improvement on $R^2$, as it will not increase with each predictor added. The best model is the one with the max $\bar{R}^2$
+
+Maximizing $R^2$ is equivalent to minimising the standard error $\widehat{\sigma_{e}}$
+
+## Cross-Validation
+1. Remove observation _t_ from the data set, and fit the model using the remaining data. Then compute the error $(e^???_{t}=y_{t} ??? \widehat{y_{t}})$ for the omitted observation. (This is not the same as the residual because the t^{th} observation was not used in estimating the value of $\widehat{y_{t}}$
+2. Repeat step 1 for $t=1,.,T$.
+3. Compute the MSE from $e^???_{1},.,e^???_{T}$.
+
+## Akaike's Information Criterion
+$$AIC = T log(\frac{SSE}{T}) + 2(k+2)$$
+
+T = number of observations used for estimation
+k = number of predictors in the model.
+k+2 because there are _k_ coefficients for the predictors, the intercept and the variance of the residuals.
+
+- __Idea__ Penalise the fit of the model(SSE) with the number of parameters that need to be estimated.
+
+- The model with the minimum value of the AIC is often the best model for forecasting. For large values of _T_, minimising the AIC is equivalent to minimising the CV value.
+
+## Corrected Akaike's Information Criterion
+For small values of _T_, the AIC tends to select too many predictors, and so a bias-corrected version of the AIC has been developed,
+$$AIC_{c} = AIC + \frac{2(k+2)(k+3)}{T-k-3}$$
+
+It should be minimized.
+
+## Schwarz's Bayesian Information Criterion
+$$BIC = T log (\frac{SSE}{T}) + (k+2)log(T)$$
+
+BIC penalises the number of parameters more heavily than the AIC. For large values of _T_, minimising BIC is similar to _leave-v-out cross-validation_ when $v=T[1???1/(log(T)???1)]$.
+
+
+## Stepwise regression
+  - Start with the model containing all potential predictors.
+  - Remove one predictor at a time. Keep the model if it improves the measure of predictive accuracy.
+  - Iterate until no further improvement.
+
+If the number of potential predictors is too large, then the backwards stepwise regression will not work and forward stepwise regression can be used instead. This procedure starts with a model that includes only the intercept. Predictors are added one at a time, and the one that most improves the measure of predictive accuracy is retained in the model. The procedure is repeated until no further improvement can be achieved.
+
+_Hybrid procedures_ involve adding or removing a predictor in backward or forward regression method.
+
+# Forecasting with Regression
+
+__Ex-ante forecast :__ made using only the information that is available in advance.
+
+__Ex-post forecast :__ made using later information on the predictors, ex-post forecasts of consumption may use the actual observations of the predictors, once these have been observed.
+
+### Example
+```{r forecasting with regression, fig.align='center'}
+beer2 <- window(ausbeer, start = 1992)
+fit.beer <- tslm(beer2 ~ trend + season)
+fcast <- forecast(fit.beer)
+
+autoplot(fcast) +
+  ggtitle("Forecasts of beer production using regression") +
+  xlab("Year") + ylab("MegaL")
+```
+
+
+## Scenario based Forecasting
+Forecaster assumes possible scenarios for the predictor variables that are of interest.
+
+  - Increase in income by _x%_    OR
+  - Decrease in employment rate by _y%_
+  
+__Note:__ Prediction intervals for scenario based forecasts do not include the uncertainty associated with the future values of the predictor variables. They assume that the values of the predictors are known in advance.
+
+```{r}
+fit.consBest <- tslm(Consumption ~ Income + Savings + Unemployment
+                     , data = uschange)
+
+h <- 4
+
+newdata <- data.frame(
+  Income = c(1,1,1,1)
+  , Savings = c(0.5, 0.5, 0.5, 0.5)
+  , Unemployment = c(0,0,0,0))
+
+fcast.up <- forecast(fit.consBest, newdata = newdata)
+
+newdata <- data.frame(
+  Income = rep(-1, h)
+  , Savings = rep(-0.5, h)
+  , Unemployment = rep(0, h))
+
+fcast.down <- forecast(fit.consBest, newdata = newdata)
+```
+
+
+```{r}
+autoplot(uschange[,1]) +
+  ylab("%age change in US consumption") +
+  autolayer(fcast.up, PI = TRUE, series = 'increase') +
+  autolayer(fcast.down, PI = TRUE, series = 'decrease') +
+  guides(colour = guide_legend(title = "Scenario"))
+```
+
+## Building a predictive regression model
+  - An alternative formulation is to use as predictors their lagged values.
+  - Including lagged values of the predictors does not only make the model operational for easily generating forecasts, it also makes it intuitively appealing.
+  
+## Prediction Intervals
+### Example:
+```{r Prediction Intervals, fig.align='center'}
+fit.cons <- tslm(Consumption ~ Income
+                 , data = uschange)
+h <- 4
+fcast.ave <- forecast(fit.cons
+                      , newdata = data.frame(Income = rep(mean(uschange[,"Income"]), h)))
+
+fcast.up <- forecast(fit.cons
+                     , newdata = data.frame(Income = rep(5,h)))
+
+autoplot(uschange[,"Consumption"]) +
+  ylab("%age change in US consumption") +
+  autolayer(fcast.ave, series = 'Average Increase', PI = TRUE) +
+  autolayer(fcast.up, series = 'Extreme Increase', PI = TRUE) +
+  guides(colour = guide_legend(title = 'Scenario'))
+```
+
+
+# Matrix Formulation
+[Link to this part](https://otexts.com/fpp2/regression-matrices.html)
+
+# Nonlinear regression
+A __log-log__ functional form is
+$$\log y = \beta_{0} + \beta_{1}\log x + \epsilon$$
+> In this model, the slope $\beta_{1}$ can be interpreted as an elasticity: $\beta_{1}$ is the average percentage change in _y_ resulting from a _1%_ increase in $x$. Other useful forms can also be specified. The __log-linear__ form is specified by only transforming the _forecast variable_ and the __linear-log__ form is obtained by transforming the _predictor_.
+
+> Recall that in order to perform a logarithmic transformation to a variable, all of its observed values must be greater than zero. In the case that variable $x$ contains zeros, we use the transformation $log(x+1)$; i.e., we add one to the value of the variable and then take logarithms. This has a similar effect to taking logarithms but avoids the problem of zeros. _It also has the neat side-effect of zeros on the original scale remaining zeros on the transformed scale._
+
+  - Piecewise linear relationships are a special case of regression splines.
+
+
+## Forecasting with a nonlinear trend
+
+### Example: Boston marathon winning times
+
+```{r nonlinear trend, fig.align='center'}
+h <- 10
+fit.lin <- tslm(marathon ~ trend)
+fcasts.lin <- forecast(fit.lin, h = h)
+fit.exp <- tslm(marathon ~ trend, lambda = 0)
+fcasts.exp <- forecast(fit.exp, h = h)
+
+t <- time(marathon)
+t.break1 <- 1940
+t.break2 <- 1980
+tb1 <- ts(pmax(0, t - t.break1), start = 1897)
+tb2 <- ts(pmax(0, t - t.break2), start = 1897)
+
+fit.pw <- tslm(marathon ~ t + tb1 + tb2)
+t.new <- t[length(t)] + seq(h)
+tb1.new <- tb1[length(tb1)] + seq(h)
+tb2.new <- tb2[length(tb2)] + seq(h)
+
+newdata <- cbind(t = t.new, tb1 = tb1.new, tb2 = tb2.new) %>% 
+  as.data.frame
+
+fcasts.pw <- forecast(fit.pw, newdata = newdata)
+
+fit.spline <- tslm(marathon ~ t + I(t^2) + I(t^3) + I(tb1^3) + I(tb2^3))
+fcasts.spl <- forecast(fit.spline, newdata = newdata)
+
+autoplot(marathon) + 
+  autolayer(fitted(fit.lin), series = "Linear") +
+  autolayer(fitted(fit.exp), series = "Exponential") +
+  autolayer(fitted(fit.pw), series = "Piecewise") +
+  autolayer(fitted(fit.spline), series = "Cubic Spline") +
+  autolayer(fcasts.pw, series = "Piecewise") +
+  autolayer(fcasts.lin, series = "Linear", PI = FALSE) +
+  autolayer(fcasts.exp, series = "Exponential", PI = FALSE) +
+  autolayer(fcasts.spl, series = "Cubic Spline", PI = FALSE) +
+  xlab("Year") + ylab("Winning times in minutes") +
+  ggtitle("Boston Marathon") +
+  guides(colour = guide_legend(title = " "))
+
+```
+
+There is an alternative formulation of cubic splines (called natural cubic smoothing splines) that imposes some constraints, so the spline function is linear at the end, which usually gives much better forecasts without compromising the fit.
+
+```{r}
+marathon %>%
+  splinef(lambda=0) %>%
+  autoplot()
+```
+
+
+```{r}
+marathon %>% 
+  splinef(lambda = 0) %>% 
+  checkresiduals
+```
+
+
+# Correlation, causation and forecasting
+## Correlation is not causation
+
+## Confounded Predictors
+- Two variables are confounded when their effects on the forecast variable cannot be separated.
+- Any pair of correlated predictors will have some level of confounding, but we would not normally describe them as confounded unless there was a relatively high level of correlation between them.
+## Multicollinearity and forecasting
